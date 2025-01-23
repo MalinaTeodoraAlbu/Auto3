@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Gestionează Comenzile</title>
+</head>
+<body>
+<h1>Comenzi</h1>
+<form method="get" th:action="@{/comenzi/search}">
+    <input type="text" name="criteriu" placeholder="Caută comenzi...">
+    <button type="submit">Caută</button>
+</form>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Stare</th>
+        <th>Client</th>
+        <th>Produse</th>
+        <th>Acțiuni</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="comanda : ${comenzi}">
+        <td th:text="${comanda.id}">1</td>
+        <td th:text="${comanda.stare}">Preluată</td>
+        <td th:text="${comanda.client.nume}">John Doe</td>
+        <td th:text="${#lists.size(comanda.produse)}">2</td>
+        <td>
+            <form method="post" th:action="@{/comenzi/changeStare/{id}(id=${comanda.id})}">
+                <select name="stareNoua">
+                    <option value="preluată" th:selected="${comanda.stare == 'preluată'}">Preluată</option>
+                    <option value="pregătită" th:selected="${comanda.stare == 'pregătită'}">Pregătită</option>
+                    <option value="plătită" th:selected="${comanda.stare == 'plătită'}">Plătită</option>
+                    <option value="plasată" th:selected="${comanda.stare == 'plasată'}">Plasată</option>
+                </select>
+                <button type="submit">Schimbă Starea</button>
+            </form>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

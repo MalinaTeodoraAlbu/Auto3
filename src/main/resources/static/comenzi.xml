@@ -1,0 +1,39 @@
+<comenzi>
+    <comanda>
+        <id>1</id>
+        <stare>preluată</stare>
+        <client>
+            <id>1</id>
+            <nume>Ion Popescu</nume>
+            <email>ion.popescu@example.com</email>
+        </client>
+        <produse>
+            <produs>
+                <id>1</id>
+                <nume>Pantofi Sport</nume>
+                <pret>250.0</pret>
+            </produs>
+            <produs>
+                <id>2</id>
+                <nume>Cizme de Iarnă</nume>
+                <pret>300.0</pret>
+            </produs>
+        </produse>
+    </comanda>
+    <comanda>
+        <id>2</id>
+        <stare>pregătită</stare>
+        <client>
+            <id>2</id>
+            <nume>Maria Ionescu</nume>
+            <email>maria.ionescu@example.com</email>
+        </client>
+        <produse>
+            <produs>
+                <id>3</id>
+                <nume>Sandale</nume>
+                <pret>150.0</pret>
+            </produs>
+        </produse>
+    </comanda>
+</comenzi>

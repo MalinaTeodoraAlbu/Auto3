@@ -1,0 +1,207 @@
+nu mai vr cu json v cu xml [ { "id": 1, "stare": "preluată", "client": { "id": 1, "nume": "Ion Popescu", "email": "ion.popescu@example.com" }, "produse": [ { "id": 1, "nume": "Pantofi Sport", "pret": 250.0 }, { "id": 2, "nume": "Cizme de Iarnă", "pret": 300.0 } ] }, { "id": 2, "stare": "pregătită", "client": { "id": 2, "nume": "Maria Ionescu", "email": "maria.ionescu@example.com" }, "produse": [ { "id": 3, "nume": "Sandale", "pret": 150.0 } ] } ]
+În regulă, haide să folosim XML în loc de JSON pentru a stoca și încărca comenzile. Iată cum ar arăta XML-ul pentru comenzile date:
+
+Fișier XML de exemplu (comenzi.xml):
+xml
+<comenzi>
+    <comanda>
+        <id>1</id>
+        <stare>preluată</stare>
+        <client>
+            <id>1</id>
+            <nume>Ion Popescu</nume>
+            <email>ion.popescu@example.com</email>
+        </client>
+        <produse>
+            <produs>
+                <id>1</id>
+                <nume>Pantofi Sport</nume>
+                <pret>250.0</pret>
+            </produs>
+            <produs>
+                <id>2</id>
+                <nume>Cizme de Iarnă</nume>
+                <pret>300.0</pret>
+            </produs>
+        </produse>
+    </comanda>
+    <comanda>
+        <id>2</id>
+        <stare>pregătită</stare>
+        <client>
+            <id>2</id>
+            <nume>Maria Ionescu</nume>
+            <email>maria.ionescu@example.com</email>
+        </client>
+        <produse>
+            <produs>
+                <id>3</id>
+                <nume>Sandale</nume>
+                <pret>150.0</pret>
+            </produs>
+        </produse>
+    </comanda>
+</comenzi>
+Actualizarea ComandaMapper pentru a încărca comenzile din fișierul XML:
+Vom folosi JAXB (Java Architecture for XML Binding) pentru a încărca și a parsa fișierul XML. Adaugă următoarea dependență în pom.xml pentru JAXB:
+
+xml
+<dependency>
+    <groupId>jakarta.xml.bind</groupId>
+    <artifactId>jakarta.xml.bind-api</artifactId>
+    <version>3.0.1</version>
+</dependency>
+<dependency>
+    <groupId>org.glassfish.jaxb</groupId>
+    <artifactId>jaxb-runtime</artifactId>
+    <version>3.0.1</version>
+</dependency>
+Clasa ComandaMapper actualizată pentru XML:
+java
+package com.example.demo.Mapper;
+
+import com.example.demo.Model.Comanda;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
+import org.springframework.stereotype.Component;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Component
+public class ComandaMapper {
+
+    private List<Comanda> comenzi;
+    private final String filePath = "path/to/comenzi.xml"; // actualizează calea către fișierul XML
+
+    public ComandaMapper() {
+        try {
+            File file = new File(filePath);
+            JAXBContext context = JAXBContext.newInstance(ComenziWrapper.class);
+            Unmarshaller unmarshaller = context.createUnmarshaller();
+            ComenziWrapper wrapper = (ComenziWrapper) unmarshaller.unmarshal(file);
+            comenzi = wrapper.getComenzi();
+        } catch (JAXBException e) {
+            e.printStackTrace();
+            comenzi = List.of(); // fallback la lista goală în caz de eroare
+        }
+    }
+
+    public void saveComanda(Comanda comanda) {
+        comenzi.add(comanda);
+        try {
+            JAXBContext context = JAXBContext.newInstance(ComenziWrapper.class);
+            Marshaller marshaller = context.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            ComenziWrapper wrapper = new ComenziWrapper();
+            wrapper.setComenzi(comenzi);
+            marshaller.marshal(wrapper, new File(filePath));
+        } catch (JAXBException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Comanda loadComanda(int id) {
+        return comenzi.stream().filter(c -> c.getId() == id).findFirst().orElse(null);
+    }
+
+    public List<Comanda> searchComenzi(String criteriu) {
+        return comenzi.stream()
+                      .filter(c -> c.getStare().contains(criteriu) ||
+                                   c.getClient().getNume().contains(criteriu))
+                      .collect(Collectors.toList());
+    }
+
+    public List<Comanda> loadAllComenzi() {
+        return comenzi;
+    }
+}
+Wrapper pentru JAXB (ComenziWrapper):
+java
+package com.example.demo.Mapper;
+
+import com.example.demo.Model.Comanda;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+
+import java.util.List;
+
+@XmlRootElement(name = "comenzi")
+public class ComenziWrapper {
+
+    private List<Comanda> comenzi;
+
+    @XmlElement(name = "comanda")
+    public List<Comanda> getComenzi() {
+        return comenzi;
+    }
+
+    public void setComenzi(List<Comanda> comenzi) {
+        this.comenzi = comenzi;
+    }
+}
+Clasa Comanda actualizată pentru JAXB:
+Asigură-te că clasele Comanda, Client și Produs sunt anotate corespunzător pentru JAXB.
+
+java
+package com.example.demo.Model;
+
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+
+import java.util.List;
+
+@XmlRootElement(name = "comanda")
+public class Comanda {
+    private int id;
+    private String stare;
+    private Client client;
+    private List<Produs> produse;
+
+    // Getter și Setter
+
+    @XmlElement
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    @XmlElement
+    public String getStare() {
+        return stare;
+    }
+
+    public void setStare(String stare) {
+        this.stare = stare;
+    }
+
+    @XmlElement
+    public Client getClient() {
+        return client;
+    }
+
+    public void setClient(Client client) {
+        this.client = client;
+    }
+
+    @XmlElement
+    public List<Produs> getProduse() {
+        return produse;
+    }
+
+    public void setProduse(List<Produs> produse) {
+        this.produse = produse;
+    }
+}
+
+// Clasele Client și Produs vor fi similare, cu anotări JAXB adecvate.
+Acum, poți folosi fișierul XML pentru a încărca comenzile în aplicația ta și pentru a le salva. Dacă întâmpini dificultăți sau ai nevoie de alte ajustări, sunt aici p
